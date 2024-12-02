@@ -1,4 +1,3 @@
-
 Sub FetchImagesAndGenerateHTML()
     Dim ws As Worksheet
     Dim http As Object
