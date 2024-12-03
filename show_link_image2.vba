@@ -69,7 +69,7 @@ Sub FetchImagesAndGenerateHTML()
 
     ' HTMLファイルとして保存
     Dim htmlFile As Object
-    Set htmlFile = fso.CreateTextFile(ThisWorkbook.Path & "\anime_images.html", True)
+    Set htmlFile = fso.CreateTextFile(ThisWorkbook.Path & "\images.html", True)
     htmlFile.Write htmlContent
     htmlFile.Close
 
