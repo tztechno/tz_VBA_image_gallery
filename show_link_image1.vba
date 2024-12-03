@@ -68,7 +68,7 @@ Sub FetchImagesAndGenerateHTML()
     htmlFile.Write htmlContent
     htmlFile.Close
 
-    MsgBox "HTMLファイルが生成されました: " & ThisWorkbook.Path & "\anime_images.html"
+    MsgBox "HTMLファイルが生成されました: " & ThisWorkbook.Path & "\images.html"
 End Sub
 
 Function Base64Encode(ByVal data As Variant) As String
