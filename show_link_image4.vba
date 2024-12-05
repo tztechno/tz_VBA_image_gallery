@@ -20,11 +20,11 @@ Sub FetchImagesAndGenerateHTML()
                   "    <style>" & vbCrLf & _
                   "        .image-container {" & vbCrLf & _
                   "            display: grid;" & vbCrLf & _
-                  "            grid-template-columns: repeat(4, 1fr);" & vbCrLf & _
+                  "            grid-template-columns: repeat(5, 1fr);" & vbCrLf & _
                   "            gap: 10px;" & vbCrLf & _
-                  "            padding: 10px;" & vbCrLf & _
                   "        }" & vbCrLf & _
                   "        .image-container img {" & vbCrLf & _
+                  "            aspect-ratio: 16 / 9;" & vbCrLf & _ ' アスペクト比の指定
                   "            width: 100%;" & vbCrLf & _
                   "            height: auto;" & vbCrLf & _
                   "            border: 1px solid #ccc;" & vbCrLf & _
