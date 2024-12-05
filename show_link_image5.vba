@@ -24,11 +24,13 @@ Sub FetchImagesAndGenerateHTML()
                   "            display: grid;" & vbCrLf & _
                   "            grid-template-columns: repeat(5, 1fr);" & vbCrLf & _
                   "            gap: 10px;" & vbCrLf & _
+                  "            padding: 10px;" & vbCrLf & _
                   "        }" & vbCrLf & _
                   "        .image-container img {" & vbCrLf & _
-                  "            aspect-ratio: 16 / 9;" & vbCrLf & _
                   "            width: 100%;" & vbCrLf & _
-                  "            height: auto;" & vbCrLf & _
+                  "            height: 100%;" & vbCrLf & _
+                  "            object-fit: contain;" & vbCrLf & _
+                  "            background-color: #f0f0f0;" & vbCrLf & _
                   "            border: 1px solid #ccc;" & vbCrLf & _
                   "            border-radius: 5px;" & vbCrLf & _
                   "        }" & vbCrLf & _
@@ -36,6 +38,7 @@ Sub FetchImagesAndGenerateHTML()
                   "</head>" & vbCrLf & _
                   "<body>" & vbCrLf & _
                   "    <div class='image-container'>" & vbCrLf
+
 
     ' リストの最終行を取得
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
