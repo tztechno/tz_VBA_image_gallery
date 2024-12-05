@@ -24,7 +24,7 @@ Sub FetchImagesAndGenerateHTML()
                   "            gap: 10px;" & vbCrLf & _
                   "        }" & vbCrLf & _
                   "        .image-container img {" & vbCrLf & _
-                  "            aspect-ratio: 16 / 9;" & vbCrLf & _ ' アスペクト比の指定
+                  "            aspect-ratio: 16 / 9;" & vbCrLf & _
                   "            width: 100%;" & vbCrLf & _
                   "            height: auto;" & vbCrLf & _
                   "            border: 1px solid #ccc;" & vbCrLf & _
