@@ -8,6 +8,8 @@ Sub FetchImagesAndGenerateHTML()
     Dim lastRow As Long
     Dim imgURL As String
     Dim i As Long
+    Dim filteredRange As Range
+    Dim cell As Range
 
     ' シートとHTTPリクエストオブジェクトの初期化
     Set ws = ThisWorkbook.Sheets(1)
@@ -38,13 +40,23 @@ Sub FetchImagesAndGenerateHTML()
     ' リストの最終行を取得
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
 
-    ' URLリストをループ
-    For i = 1 To lastRow
+    ' フィルタリングされた範囲を取得
+    On Error Resume Next ' エラー処理（フィルターがない場合にエラーを無視）
+    Set filteredRange = ws.Range("A1:A" & lastRow).SpecialCells(xlCellTypeVisible) ' 可視セルを取得
+    On Error GoTo 0 ' エラー処理を元に戻す
+
+    ' フィルタリングされていない場合は、全行を処理
+    If filteredRange Is Nothing Then
+        Set filteredRange = ws.Range("A1:A" & lastRow)
+    End If
+
+    ' URLリストをループ（フィルタリングされた範囲内のみ）
+    For Each cell In filteredRange
         ' ハイパーリンクがあれば、そのURLを取得
-        If ws.Cells(i, 1).Hyperlinks.Count > 0 Then
-            imgURL = ws.Cells(i, 1).Hyperlinks(1).Address
+        If cell.Hyperlinks.Count > 0 Then
+            imgURL = cell.Hyperlinks(1).Address
         Else
-            imgURL = ws.Cells(i, 1).Value
+            imgURL = cell.Value
         End If
         
         ' 空白セルをスキップ
@@ -70,7 +82,7 @@ Sub FetchImagesAndGenerateHTML()
         End If
 
 SkipIteration:
-    Next i
+    Next cell
 
     ' HTMLの終了部分
     htmlContent = htmlContent & "    </div>" & vbCrLf & "</body>" & vbCrLf & "</html>"
