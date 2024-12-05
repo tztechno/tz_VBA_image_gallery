@@ -47,11 +47,12 @@ Sub FetchImagesAndGenerateHTML()
             imgURL = ws.Cells(i, 1).Value
         End If
         
-        ' URL形式でない場合はスキップ
-        If Not IsValidURL(imgURL) Then
-            GoTo SkipIteration
-        End If
-        
+        ' 空白セルをスキップ
+        If Trim(imgURL) = "" Then GoTo SkipIteration
+
+        ' URL形式が正しいか確認 (簡易チェック)
+        If Not IsValidURL(imgURL) Then GoTo SkipIteration
+
         ' HTTPリクエストで画像データを取得
         On Error Resume Next
         http.Open "GET", imgURL, False
@@ -67,7 +68,7 @@ Sub FetchImagesAndGenerateHTML()
             ' HTMLに画像を埋め込む
             htmlContent = htmlContent & "<img src='data:image/png;base64," & base64Str & "' alt='Image'/>" & vbCrLf
         End If
-        
+
 SkipIteration:
     Next i
 
@@ -99,10 +100,10 @@ Function Base64Encode(ByVal data As Variant) As String
 End Function
 
 Function IsValidURL(ByVal url As String) As Boolean
-    Dim regex As Object
-    Set regex = CreateObject("VBScript.RegExp")
-    regex.Pattern = "^(https?://[\w\-\.]+(\.[\w\-\.]+)+(:\d+)?(/[\w\-\.]*)*/?)$"
-    regex.IgnoreCase = True
-    IsValidURL = regex.Test(url)
-    Set regex = Nothing
+    ' URLの簡易チェック: "http://" または "https://" で始まる場合に有効と判定
+    If url Like "http://*" Or url Like "https://*" Then
+        IsValidURL = True
+    Else
+        IsValidURL = False
+    End If
 End Function
