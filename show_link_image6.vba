@@ -91,16 +91,16 @@ SkipIteration:
     htmlContent = htmlContent & "    </div>" & vbCrLf & "</body>" & vbCrLf & "</html>"
 
     ' HTMLファイルとして保存
+    filePath = ThisWorkbook.Path & "\image.html"
     Dim htmlFile As Object
-    Set htmlFile = fso.CreateTextFile(ThisWorkbook.Path & "\image.html", True)
+    Set htmlFile = fso.CreateTextFile(filePath, True)
     htmlFile.Write htmlContent
     htmlFile.Close
 
     ' HTMLをブラウザで表示
-    filePath = ThisWorkbook.Path & "\image.html"
     Call OpenHTMLInBrowser(filePath)
 
-    MsgBox "HTMLファイルが生成されました: " & ThisWorkbook.Path & "\image.html"
+    MsgBox "HTMLファイルが生成されました: " & filePath
 End Sub
 
 
