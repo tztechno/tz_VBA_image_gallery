@@ -97,7 +97,7 @@ SkipIteration:
     htmlFile.Close
 
     ' HTMLをブラウザで表示
-    filePath = ThisWorkbook.Path & "\images.html"
+    filePath = ThisWorkbook.Path & "\image.html"
     Call OpenHTMLInBrowser(filePath)
 
     MsgBox "HTMLファイルが生成されました: " & ThisWorkbook.Path & "\image.html"
