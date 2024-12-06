@@ -108,7 +108,7 @@ Sub OpenHTMLInBrowser(filePath As String)
     ' デフォルトのブラウザでHTMLファイルを開く
     Dim shell As Object
     Set shell = CreateObject("WScript.Shell")
-    shell.Run filePath
+    shell.Run """" & filePath & """"
 End Sub
 
 
