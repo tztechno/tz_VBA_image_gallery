@@ -8,8 +8,8 @@ Sub FetchImagesAndGenerateHTML()
     Dim lastRow As Long
     Dim imgURL As String
     Dim i As Long
-    Dim htmlFile As Object
-    Dim filePath As String
+    Dim filteredRange As Range
+    Dim cell As Range
 
     ' シートとHTTPリクエストオブジェクトの初期化
     Set ws = ThisWorkbook.Sheets(1)
@@ -28,7 +28,9 @@ Sub FetchImagesAndGenerateHTML()
                   "        }" & vbCrLf & _
                   "        .image-container img {" & vbCrLf & _
                   "            width: 100%;" & vbCrLf & _
-                  "            height: auto;" & vbCrLf & _
+                  "            height: 100%;" & vbCrLf & _
+                  "            object-fit: contain;" & vbCrLf & _
+                  "            background-color: #f0f0f0;" & vbCrLf & _
                   "            border: 1px solid #ccc;" & vbCrLf & _
                   "            border-radius: 5px;" & vbCrLf & _
                   "        }" & vbCrLf & _
@@ -37,18 +39,35 @@ Sub FetchImagesAndGenerateHTML()
                   "<body>" & vbCrLf & _
                   "    <div class='image-container'>" & vbCrLf
 
+
     ' リストの最終行を取得
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
 
-    ' URLリストをループ
-    For i = 1 To lastRow
+    ' フィルタリングされた範囲を取得
+    On Error Resume Next ' エラー処理（フィルターがない場合にエラーを無視）
+    Set filteredRange = ws.Range("A1:A" & lastRow).SpecialCells(xlCellTypeVisible) ' 可視セルを取得
+    On Error GoTo 0 ' エラー処理を元に戻す
+
+    ' フィルタリングされていない場合は、全行を処理
+    If filteredRange Is Nothing Then
+        Set filteredRange = ws.Range("A1:A" & lastRow)
+    End If
+
+    ' URLリストをループ（フィルタリングされた範囲内のみ）
+    For Each cell In filteredRange
         ' ハイパーリンクがあれば、そのURLを取得
-        If ws.Cells(i, 1).Hyperlinks.Count > 0 Then
-            imgURL = ws.Cells(i, 1).Hyperlinks(1).Address
+        If cell.Hyperlinks.Count > 0 Then
+            imgURL = cell.Hyperlinks(1).Address
         Else
-            imgURL = ws.Cells(i, 1).Value
+            imgURL = cell.Value
         End If
         
+        ' 空白セルをスキップ
+        If Trim(imgURL) = "" Then GoTo SkipIteration
+
+        ' URL形式が正しいか確認 (簡易チェック)
+        If Not IsValidURL(imgURL) Then GoTo SkipIteration
+
         ' HTTPリクエストで画像データを取得
         On Error Resume Next
         http.Open "GET", imgURL, False
@@ -64,24 +83,22 @@ Sub FetchImagesAndGenerateHTML()
             ' HTMLに画像を埋め込む
             htmlContent = htmlContent & "<img src='data:image/png;base64," & base64Str & "' alt='Image'/>" & vbCrLf
         End If
-    Next i
+
+SkipIteration:
+    Next cell
 
     ' HTMLの終了部分
     htmlContent = htmlContent & "    </div>" & vbCrLf & "</body>" & vbCrLf & "</html>"
 
-    ' 保存先のファイルパスを指定
-    filePath = ThisWorkbook.Path & "\image.html"
-    
     ' HTMLファイルとして保存
-    Set htmlFile = fso.CreateTextFile(filePath, True)
+    Dim htmlFile As Object
+    Set htmlFile = fso.CreateTextFile(ThisWorkbook.Path & "\image.html", True)
     htmlFile.Write htmlContent
     htmlFile.Close
 
-    ' HTMLをブラウザで表示
-    Call OpenHTMLInBrowser(filePath)
-
-    MsgBox "HTMLファイルが生成されました: " & filePath
+    MsgBox "HTMLファイルが生成されました: " & ThisWorkbook.Path & "\image.html"
 End Sub
+
 
 Sub OpenHTMLInBrowser(filePath As String)
     ' デフォルトのブラウザでHTMLファイルを開く
@@ -89,6 +106,7 @@ Sub OpenHTMLInBrowser(filePath As String)
     Set shell = CreateObject("WScript.Shell")
     shell.Run filePath
 End Sub
+
 
 Function Base64Encode(ByVal data As Variant) As String
     Dim xmlDoc As Object
@@ -105,3 +123,11 @@ Function Base64Encode(ByVal data As Variant) As String
     Set xmlDoc = Nothing
 End Function
 
+Function IsValidURL(ByVal url As String) As Boolean
+    ' URLの簡易チェック: "http://" または "https://" で始まる場合に有効と判定
+    If url Like "http://*" Or url Like "https://*" Then
+        IsValidURL = True
+    Else
+        IsValidURL = False
+    End If
+End Function
