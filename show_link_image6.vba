@@ -10,6 +10,8 @@ Sub FetchImagesAndGenerateHTML()
     Dim i As Long
     Dim filteredRange As Range
     Dim cell As Range
+    Dim filePath As String
+
 
     ' シートとHTTPリクエストオブジェクトの初期化
     Set ws = ThisWorkbook.Sheets(1)
@@ -98,7 +100,7 @@ SkipIteration:
     htmlFile.Close
 
     ' HTMLをブラウザで表示
-    Call OpenHTMLInBrowser(filePath)
+    OpenHTMLInBrowser filePath
 
     MsgBox "HTMLファイルが生成されました: " & filePath
 End Sub
