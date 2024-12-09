@@ -7,17 +7,20 @@ Sub FetchImagesAndGenerateHTML()
     Dim htmlContent As String
     Dim lastRow As Long
     Dim imgURL As String
-    Dim i As Long
     Dim filteredRange As Range
     Dim cell As Range
     Dim filePath As String
-
-
-    ' シートとHTTPリクエストオブジェクトの初期化
+    Dim successCount As Long
+    Dim failedCount As Long
+    
+    ' エラーハンドリングの設定
+    On Error GoTo ErrorHandler
+    
+    ' シートとオブジェクトの初期化
     Set ws = ThisWorkbook.Sheets(1)
     Set http = CreateObject("MSXML2.XMLHTTP")
     Set fso = CreateObject("Scripting.FileSystemObject")
-
+    
     ' HTMLの開始部分
     htmlContent = "<html>" & vbCrLf & _
                   "<head>" & vbCrLf & _
@@ -29,111 +32,138 @@ Sub FetchImagesAndGenerateHTML()
                   "            padding: 10px;" & vbCrLf & _
                   "        }" & vbCrLf & _
                   "        .image-container img {" & vbCrLf & _
-                  "            width: 100%;" & vbCrLf & _
-                  "            height: 100%;" & vbCrLf & _
+                  "            max-width: 100%;" & vbCrLf & _
+                  "            max-height: 300px;" & vbCrLf & _
                   "            object-fit: contain;" & vbCrLf & _
-                  "            background-color: #f0f0f0;" & vbCrLf & _
-                  "            border: 1px solid #ccc;" & vbCrLf & _
-                  "            border-radius: 5px;" & vbCrLf & _
                   "        }" & vbCrLf & _
                   "    </style>" & vbCrLf & _
                   "</head>" & vbCrLf & _
                   "<body>" & vbCrLf & _
                   "    <div class='image-container'>" & vbCrLf
-
-
+    
     ' リストの最終行を取得
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-
+    lastRow = ws.Cells(ws.Rows.Count, 11).End(xlUp).Row
+    
     ' フィルタリングされた範囲を取得
-    On Error Resume Next ' エラー処理（フィルターがない場合にエラーを無視）
-    Set filteredRange = ws.Range("K1:K" & lastRow).SpecialCells(xlCellTypeVisible) ' 可視セルを取得
-    On Error GoTo 0 ' エラー処理を元に戻す
-
-    ' フィルタリングされていない場合は、全行を処理
-    If filteredRange Is Nothing Then
-        Set filteredRange = ws.Range("K1:K" & lastRow)
-    End If
-
-    ' URLリストをループ（フィルタリングされた範囲内のみ）
+    Set filteredRange = ws.Range("K1:K" & lastRow).SpecialCells(xlCellTypeVisible)
+    
+    ' カウンターのリセット
+    successCount = 0
+    failedCount = 0
+    
+    ' URLリストをループ
     For Each cell In filteredRange
-        ' ハイパーリンクがあれば、そのURLを取得
+        ' URLの取得（ハイパーリンクと通常のテキストの両方に対応）
         If cell.Hyperlinks.Count > 0 Then
             imgURL = cell.Hyperlinks(1).Address
         Else
             imgURL = cell.Value
         End If
         
-        ' 空白セルをスキップ
-        If Trim(imgURL) = "" Then GoTo SkipIteration
-
-        ' URL形式が正しいか確認 (簡易チェック)
-        If Not IsValidURL(imgURL) Then GoTo SkipIteration
-
-        ' HTTPリクエストで画像データを取得
-        On Error Resume Next
-        http.Open "GET", imgURL, False
-        http.Send
-        On Error GoTo 0
-        
-        If http.Status = 200 Then
-            imgData = http.ResponseBody
-            
-            ' Base64エンコード
-            base64Str = Base64Encode(imgData)
-            
-            ' HTMLに画像を埋め込む
-            htmlContent = htmlContent & "<img src='data:image/png;base64," & base64Str & "' alt='Image'/>" & vbCrLf
+        ' 空白セルや文字のみのセルを除外
+        If Len(Trim(imgURL)) > 0 Then
+            ' 画像形式のチェック
+            If IsImageURL(imgURL) Then
+                On Error Resume Next
+                ' HTTPリクエスト
+                http.Open "GET", imgURL, False
+                http.Send
+                
+                ' 画像の処理
+                If http.Status = 200 Then
+                    imgData = http.ResponseBody
+                    base64Str = Base64Encode(imgData)
+                    
+                    ' MIMEタイプの判定
+                    Dim mimeType As String
+                    mimeType = GetMimeTypeFromURL(imgURL)
+                    
+                    ' HTMLに画像を埋め込む
+                    htmlContent = htmlContent & "<img src='data:" & mimeType & ";base64," & base64Str & "' alt='Image'/>" & vbCrLf
+                    successCount = successCount + 1
+                Else
+                    failedCount = failedCount + 1
+                End If
+                On Error GoTo ErrorHandler
+            End If
         End If
-
-SkipIteration:
     Next cell
-
+    
     ' HTMLの終了部分
     htmlContent = htmlContent & "    </div>" & vbCrLf & "</body>" & vbCrLf & "</html>"
-
+    
     ' HTMLファイルとして保存
-    filePath = ThisWorkbook.Path & "\image.html"
+    filePath = ThisWorkbook.Path & "\image_gallery.html"
     Dim htmlFile As Object
     Set htmlFile = fso.CreateTextFile(filePath, True)
     htmlFile.Write htmlContent
     htmlFile.Close
-
+    
     ' HTMLをブラウザで表示
     OpenHTMLInBrowser filePath
-
-    MsgBox "HTMLファイルが生成されました: " & filePath
+    
+    ' 処理結果の表示
+    MsgBox "HTMLファイルが生成されました: " & filePath & vbNewLine & _
+           "成功した画像: " & successCount & vbNewLine & _
+           "失敗した画像: " & failedCount
+    
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "エラーが発生しました。エラー番号: " & Err.Number & vbNewLine & _
+           "エラー説明: " & Err.Description, vbCritical
 End Sub
 
+' 画像形式のチェック関数
+Function IsImageURL(ByVal url As String) As Boolean
+    Dim regEx As Object
+    Set regEx = CreateObject("VBScript.RegExp")
+    
+    ' 画像形式の拡張子をチェック（大文字小文字区別なし）
+    regEx.Pattern = "\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$"
+    regEx.IgnoreCase = True
+    
+    IsImageURL = regEx.Test(url)
+End Function
 
-Sub OpenHTMLInBrowser(filePath As String)
-    ' デフォルトのブラウザでHTMLファイルを開く
-    Dim shell As Object
-    Set shell = CreateObject("WScript.Shell")
-    shell.Run """" & filePath & """"
-End Sub
+' MIMEタイプ取得関数
+Function GetMimeTypeFromURL(ByVal url As String) As String
+    Dim ext As String
+    ext = LCase(Right(url, 4))
+    
+    Select Case ext
+        Case ".jpg", "jpeg"
+            GetMimeTypeFromURL = "image/jpeg"
+        Case ".png"
+            GetMimeTypeFromURL = "image/png"
+        Case ".gif"
+            GetMimeTypeFromURL = "image/gif"
+        Case ".bmp"
+            GetMimeTypeFromURL = "image/bmp"
+        Case "webp"
+            GetMimeTypeFromURL = "image/webp"
+        Case Else
+            GetMimeTypeFromURL = "image/png"  ' デフォルト
+    End Select
+End Function
 
-
+' 以前のBase64Encode、OpenHTMLInBrowser関数は同じ
 Function Base64Encode(ByVal data As Variant) As String
     Dim xmlDoc As Object
     Dim node As Object
-
-    ' XMLオブジェクトを利用してBase64エンコードを実現
+    
     Set xmlDoc = CreateObject("MSXML2.DOMDocument")
     Set node = xmlDoc.CreateElement("Base64Data")
     node.DataType = "bin.base64"
     node.NodeTypedValue = data
     Base64Encode = node.Text
-
+    
     Set node = Nothing
     Set xmlDoc = Nothing
 End Function
 
-Function IsValidURL(ByVal url As String) As Boolean
-    ' URLの簡易チェック: "http://" または "https://" で始まる場合に有効と判定
-    If url Like "http://*" Or url Like "https://*" Then
-        IsValidURL = True
-    Else
-        IsValidURL = False
-    End If
-End Function
+Sub OpenHTMLInBrowser(filePath As String)
+    Dim shell As Object
+    Set shell = CreateObject("WScript.Shell")
+    shell.Run """" & filePath & """"
+End Sub
