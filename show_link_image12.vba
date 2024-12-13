@@ -18,7 +18,7 @@ Sub FetchImagesAndGenerateHTML()
     ' シートとオブジェクトの初期化
     Set ws = ThisWorkbook.Sheets(1)
     
-    ' WinHTTPリクエストの作成
+    ' WinHttpRequestの作成
     Set httpRequest = CreateObject("WinHttp.WinHttpRequest.5.1")
     
     ' HTMLの開始部分
@@ -74,7 +74,7 @@ Sub FetchImagesAndGenerateHTML()
                 ' エラーハンドリングを強化
                 On Error Resume Next
                 
-                ' WinHTTPでGETリクエストを送信
+                ' HTTPリクエストの設定
                 httpRequest.Open "GET", imgURL, False
                 httpRequest.Send
                 
@@ -138,3 +138,82 @@ ErrorHandler:
     ' デバッグ情報の出力
     Debug.Print errorMsg
 End Sub
+
+' 画像URL判定関数
+Function IsImageURL(ByVal url As String) As Boolean
+    Dim regEx As Object
+    Set regEx = CreateObject("VBScript.RegExp")
+    
+    ' 画像形式の拡張子をチェック（大文字小文字区別なし）
+    regEx.Pattern = "\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$"
+    regEx.IgnoreCase = True
+    
+    IsImageURL = regEx.Test(url)
+End Function
+
+' MIMEタイプ取得関数
+Function GetMimeTypeFromURL(ByVal url As String) As String
+    Dim ext As String
+    ext = LCase(Right(url, 4))
+    
+    Select Case ext
+        Case ".jpg", "jpeg"
+            GetMimeTypeFromURL = "image/jpeg"
+        Case ".png"
+            GetMimeTypeFromURL = "image/png"
+        Case ".gif"
+            GetMimeTypeFromURL = "image/gif"
+        Case ".bmp"
+            GetMimeTypeFromURL = "image/bmp"
+        Case "webp"
+            GetMimeTypeFromURL = "image/webp"
+        Case Else
+            GetMimeTypeFromURL = "image/png"  ' デフォルト
+    End Select
+End Function
+
+' Base64変換関数
+Function ConvertToBase64(ByRef data() As Byte) As String
+    ' Base64エンコーディングをVBA純粋実装に変更
+    Const BASE64_CHARS As String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    Dim i As Long
+    Dim j As Long
+    Dim SrcLen As Long
+    Dim ret As String
+    Dim c1 As Long, c2 As Long, c3 As Long
+    
+    SrcLen = UBound(data) + 1
+    
+    For i = 0 To SrcLen - 1 Step 3
+        ' 3バイト読み取り
+        c1 = data(i)
+        If i + 1 < SrcLen Then
+            c2 = data(i + 1)
+        Else
+            c2 = 0
+        End If
+        If i + 2 < SrcLen Then
+            c3 = data(i + 2)
+        Else
+            c3 = 0
+        End If
+        
+        ' Base64エンコーディング
+        ret = ret & Mid(BASE64_CHARS, ((c1 And &HFC) \ 4) + 1, 1)
+        ret = ret & Mid(BASE64_CHARS, (((c1 And &H3) * 16) + ((c2 And &HF0) \ 16)) + 1, 1)
+        
+        If i + 1 < SrcLen Then
+            ret = ret & Mid(BASE64_CHARS, (((c2 And &HF) * 4) + ((c3 And &HC0) \ 64)) + 1, 1)
+        Else
+            ret = ret & "="
+        End If
+        
+        If i + 2 < SrcLen Then
+            ret = ret & Mid(BASE64_CHARS, (c3 And &H3F) + 1, 1)
+        Else
+            ret = ret & "="
+        End If
+    Next i
+    
+    ConvertToBase64 = ret
+End Function
