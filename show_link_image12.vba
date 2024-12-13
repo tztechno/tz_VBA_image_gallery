@@ -343,7 +343,6 @@ Function FetchBase64Image(ByVal url As String) As String
     FetchBase64Image = Base64Encode(fullData)
 End Function
 
-' URLパース関数
 Function ParseURL(ByVal url As String) As Object
     Dim result As Object
     Set result = CreateObject("Scripting.Dictionary")
