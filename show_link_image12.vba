@@ -361,10 +361,3 @@ Function ParseURL(ByVal url As String) As Object
     
     ParseURL = result
 End Function
-
-' メモリコピー用のAPIデクレアレーション
-Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" ( _
-    Destination As Any, _
-    Source As Any, _
-    ByVal Length As LongPtr _
-)
