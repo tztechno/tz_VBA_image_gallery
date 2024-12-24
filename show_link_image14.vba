@@ -59,8 +59,8 @@ Sub FetchImageURLsAndGenerateHTML()
             imgURL = cell.Value
         End If
         
-        ' 空白セルを除外
-        If Len(Trim(imgURL)) > 0 Then
+        ' 空白セルを除外し、httpまたはhttpsで始まるかを確認
+        If Len(Trim(imgURL)) > 0 And (LCase(Left(imgURL, 7)) = "http://" Or LCase(Left(imgURL, 8)) = "https://") Then
             ' HTMLに画像URLを直接埋め込む
             htmlContent = htmlContent & "        <div class='image-wrapper'>" & _
                           "<img src='" & imgURL & "' alt='Image'/>" & _
